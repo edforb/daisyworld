@@ -250,7 +250,7 @@ def daisysimulation(genotype, diversity):
 ######################
 
 ###  General parameters
-diversity = 3
+diversity = 30
 popsize = 100
 recombProb = 0.75
 mutatProb = 0.1

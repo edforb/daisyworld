@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import multiprocessing as multip
 
 class Microbial():
 
@@ -40,20 +39,6 @@ class Microbial():
         np.savez(filename, avghist=self.avgHistory, besthist=self.bestHistory, bestind=bi)
 
     def run(self):
-        
-        
-        # # Attempting parallel processing.
-        # if __name__ == '__main__':
-        #     num_workers = multip.cpu_count()
-        #     pool = multip.Pool(num_workers)
-        #     #pool = multip.Pool(processes=4)
-            
-            
-        #     outputs = pool.map(self.fitnessFunction, conds)
-                
-        #     survivability = np.mean(outputs)
-            
-            
         # Calculate all fitness once
         for i in range(self.popsize):
             self.fitness[i] = self.fitnessFunction(self.pop[i])
