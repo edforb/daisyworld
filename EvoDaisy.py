@@ -15,15 +15,14 @@ by Eden Forbes
 # Imports
 import numpy as np
 import matplotlib.pyplot as plt
-import daisyEvo as evo
-import networkx as nx
+import statistics
 
 
-def daisyworld_fitness(genotype, diversity, maxconv, display):
+def daisyworld_fitness(genotype, diversity, maxconv, display, fluxes, pert_value, perturbation):
     """Run the daisyworld model"""
 
     class world:
-        def __init__(self, genotype, diversity):
+        def __init__(self, genotype, diversity, fluxes):
             # Convergence Criteria
             self.diversity = diversity
             self.alb_low = 0.1
@@ -35,7 +34,7 @@ def daisyworld_fitness(genotype, diversity, maxconv, display):
             self.Sflux_min = 0.5
             self.Sflux_max = 2.0
             self.Sflux_step = 0.002
-            self.fluxes = np.arange(self.Sflux_min, self.Sflux_max, self.Sflux_step)
+            self.fluxes = fluxes
             self.insul = 20
             self.spec_list = []
             self.web = np.reshape(genotype, (diversity, diversity))
@@ -43,6 +42,8 @@ def daisyworld_fitness(genotype, diversity, maxconv, display):
             self.init_life = 0
             self.end_life = 0
             self.duration = 0
+            self.pert_value = pert_value
+            self.perturbation = perturbation
 
     class Species:
         def __init__(self, world, troph, alb):
@@ -70,7 +71,7 @@ def daisyworld_fitness(genotype, diversity, maxconv, display):
 
     # Initialize arrays
 
-    daisyworld = world(genotype, diversity)
+    daisyworld = world(genotype, diversity, fluxes)
 
     counter_troph = 0
     counter_alb = daisyworld.alb_low
@@ -84,12 +85,13 @@ def daisyworld_fitness(genotype, diversity, maxconv, display):
     area_barren_vec = np.zeros_like(daisyworld.fluxes)
 
     Tp_vec = np.zeros_like(daisyworld.fluxes)
+    Tp_dead_vec = np.zeros_like(daisyworld.fluxes)
 
     # Loop over fluxes
     for j, flux in enumerate(daisyworld.fluxes):
 
-        # if flux == pert_value:
-        # flux = flux + perturbation
+        if j in daisyworld.pert_value:
+            flux = flux + daisyworld.perturbation
 
         # Minimum species coverage
         area_covered = 0
@@ -120,6 +122,7 @@ def daisyworld_fitness(genotype, diversity, maxconv, display):
 
             # Planetary temperature
             Tp = np.power(flux * So * (1 - alb_p) / sigma, 0.25)
+            Tp_dead = np.power(flux * So * (1 - daisyworld.alb_barren) / sigma, 0.25)
 
             # Local temperatures
             for s in daisyworld.spec_list:
@@ -185,6 +188,7 @@ def daisyworld_fitness(genotype, diversity, maxconv, display):
         area_vec[j] = area_counter_3
         area_barren_vec[j] = area_barren
         Tp_vec[j] = Tp
+        Tp_dead_vec[j] = Tp_dead
 
         # Check life init, end
         current_max = 0
@@ -197,69 +201,35 @@ def daisyworld_fitness(genotype, diversity, maxconv, display):
         if daisyworld.init_life != 0:
             if current_max < daisyworld.spec_list[0].min_area:
                 daisyworld.end_life = flux
-        if daisyworld.end_life != 0:
-            break
+        #if daisyworld.end_life != 0:
+         #   break
+        
+    if daisyworld.end_life == 0:
+        daisyworld.end_life = daisyworld.fluxes[-1]
 
         ### GRAPHS ###
     if display == True:
         fig, ax = plt.subplots(2, 1)
 
         for s in daisyworld.spec_list:
-            ax[0].plot(daisyworld.fluxes, 100 * s.area_vec, color="gray", label="black")
-        ax[0].plot(daisyworld.fluxes, 100 * area_vec, color="black", label="total")
-        ax[0].plot(
-            daisyworld.fluxes, 100 * area_barren_vec, color="brown", label="total"
-        )
+            ax[0].plot(list(range(len(daisyworld.fluxes))), 100 * s.area_vec, label=s.troph)
+       # ax[0].plot(list(range(len(daisyworld.fluxes))), 100 * area_vec, color="black", label="total")
+       # ax[0].plot(
+       #     list(range(len(daisyworld.fluxes))), 100 * area_barren_vec, color="brown", label="total"
+       # )
 
-        ax[0].set_xlabel("Solar Luminosity")
+        ax[0].set_xlabel("Time")
         ax[0].set_ylabel("Coverage Area (%)")
 
-        ax[1].plot(daisyworld.fluxes, Tp_vec - KELVIN_OFFSET, color="red")
-        ax[1].set_xlabel("Solar Luminosity")
+        ax[1].plot(list(range(len(daisyworld.fluxes))), Tp_vec - KELVIN_OFFSET, color="red")
+        ax[1].plot(list(range(len(daisyworld.fluxes))), Tp_dead_vec - KELVIN_OFFSET, color="gray")
+        ax[1].set_xlabel("Time")
         ax[1].set_ylabel("Global Temperature (C)")
         plt.show()
 
     daisyworld.duration = daisyworld.end_life - daisyworld.init_life
+    
+    ## CHOOSE FITNESS FUNCTION
+    return statistics.mean(area_vec)
+    # return daisyworld.duration
 
-    return daisyworld.duration
-
-
-if __name__ == "__main__":
-
-    ######################
-    ## EVOLUTIONARY STUFF
-    ######################
-
-    ###  General parameters
-    diversity = 30
-    popsize = 100
-    recombProb = 0.75
-    mutatProb = 0.1
-    generations = 5
-
-    ###  Microbial test
-    demeSize = 2
-    ga = evo.Microbial(
-        fitnessFunction,
-        popsize,
-        diversity,
-        recombProb,
-        mutatProb,
-        demeSize,
-        generations,
-    )
-    ga.run()
-    ga.showFitness()
-    ga.save("microbialresults")
-
-    ######################
-    ## NETWORK DISPLAY
-    ######################
-
-    bestind = ga.pop[np.argmax(ga.fitness)]
-    bestind = np.reshape(bestind, (diversity, diversity))
-
-    G = nx.DiGraph(bestind)
-    nx.draw(G, with_labels=True, font_weight="bold")
-
-    pass
