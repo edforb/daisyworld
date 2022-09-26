@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from tkinter import W
 import numpy as np
 import pickle
 # WARNING I AM FILTERING WARNINGS BECUASE PATHOS DOESN'T LIKE THEM
@@ -20,7 +21,7 @@ if use_best_individual:
 # Parameters
 ########################
 
-diversity = 4
+diversity = 30
 display = False
 maxconv = 100
 
@@ -29,7 +30,8 @@ maxconv = 100
 #fluxes = np.arange(0.3, 1.3, 0.02)
 
 ## Seasons
-fluxes = (np.sin(np.arange(1,25,0.1))+4.5)/6
+#fluxes = (np.sin(np.arange(1,25,0.1))+4.5)/6
+fluxes = np.arange(0.5, 3.0, 0.02)
 
 ####### PERTURBATION ########
 # Perturbation
@@ -48,18 +50,18 @@ if add_noise == True:
 # Evolve Solutions
 ########################
 
-pop_size = 20
+pop_size = 200
 genotype_size = diversity * diversity
 
 evol_params = {
-    "num_processes": 1,
+    "num_processes": 100,
     "pop_size": pop_size,  # population size
     "genotype_size": genotype_size,  # dimensionality of solution
     "fitness_function": partial(daisyworld_fitness, diversity=diversity, display=display, 
                                 maxconv=maxconv, fluxes=fluxes, pert_value=pert_value,
                                 perturbation=perturbation),  # custom function defined to evaluate fitness of a solution
     "elitist_fraction": 0.1,  # fraction of population retained as is between generation
-    "mutation_variance": 0.05,  # mutation noise added to offspring.
+    "mutation_variance": 0.1,  # mutation noise added to offspring.
 }
 initial_pop = np.random.randint(2, size=(pop_size, diversity*diversity))
 

@@ -201,8 +201,8 @@ def daisyworld_fitness(genotype, diversity, maxconv, display, fluxes, pert_value
         if daisyworld.init_life != 0:
             if current_max < daisyworld.spec_list[0].min_area:
                 daisyworld.end_life = flux
-        #if daisyworld.end_life != 0:
-         #   break
+        if daisyworld.end_life != 0:
+            break
         
     if daisyworld.end_life == 0:
         daisyworld.end_life = daisyworld.fluxes[-1]
@@ -221,15 +221,15 @@ def daisyworld_fitness(genotype, diversity, maxconv, display, fluxes, pert_value
         ax[0].set_xlabel("Time")
         ax[0].set_ylabel("Coverage Area (%)")
 
-        ax[1].plot(list(range(len(daisyworld.fluxes))), Tp_vec - KELVIN_OFFSET, color="red")
-        ax[1].plot(list(range(len(daisyworld.fluxes))), Tp_dead_vec - KELVIN_OFFSET, color="gray")
+        ax[1].plot(daisyworld.fluxes, Tp_vec - KELVIN_OFFSET, color="red")
+        ax[1].plot(daisyworld.fluxes, Tp_dead_vec - KELVIN_OFFSET, color="gray")
         ax[1].set_xlabel("Time")
         ax[1].set_ylabel("Global Temperature (C)")
-        plt.show()
+        plt.savefig("daisyworld.png")
 
     daisyworld.duration = daisyworld.end_life - daisyworld.init_life
     
     ## CHOOSE FITNESS FUNCTION
-    return statistics.mean(area_vec)
+    return daisyworld.duration
     # return daisyworld.duration
 
