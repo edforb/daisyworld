@@ -17,12 +17,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import statistics
 
-
-def daisyworld_fitness(genotype, diversity, maxconv, display, fluxes, pert_value, perturbation):
+# food web and albedos come from an evolutionary algorithm
+# and are discrete and continuous genotypes, respectively.
+def daisyworld_fitness(food_web, albedos, diversity, maxconv, display, fluxes, pert_value, perturbation):
     """Run the daisyworld model"""
 
     class world:
-        def __init__(self, genotype, diversity, fluxes):
+        def __init__(self, food_web, diversity, fluxes):
             # Convergence Criteria
             self.diversity = diversity
             self.alb_low = 0.1
@@ -37,7 +38,7 @@ def daisyworld_fitness(genotype, diversity, maxconv, display, fluxes, pert_value
             self.fluxes = fluxes
             self.insul = 20
             self.spec_list = []
-            self.web = np.reshape(genotype, (diversity, diversity))
+            self.web = np.reshape(food_web, (diversity, diversity))
             np.fill_diagonal(self.web, 0)
             self.init_life = 0
             self.end_life = 0
@@ -71,14 +72,12 @@ def daisyworld_fitness(genotype, diversity, maxconv, display, fluxes, pert_value
 
     # Initialize arrays
 
-    daisyworld = world(genotype, diversity, fluxes)
+    daisyworld = world(food_web, diversity, fluxes)
 
     counter_troph = 0
-    counter_alb = daisyworld.alb_low
     for i in daisyworld.web[0]:
-        d = Species(daisyworld, counter_troph, counter_alb)
+        d = Species(daisyworld, counter_troph, albedos[i])
         daisyworld.spec_list.append(d)
-        counter_alb = counter_alb + daisyworld.alb_int
         counter_troph = counter_troph + 1
 
     area_vec = np.zeros_like(daisyworld.fluxes)

@@ -7,7 +7,7 @@ import pickle
 import warnings
 warnings.filterwarnings("ignore")
 
-from EvolSearch import EvolSearch
+from EvolSearch_mixed import EvolSearch
 from EvoDaisy import daisyworld_fitness
 from functools import partial
 
@@ -31,7 +31,7 @@ maxconv = 100
 
 ## Seasons
 #fluxes = (np.sin(np.arange(1,25,0.1))+4.5)/6
-fluxes = np.arange(0.5, 3.0, 0.02)
+fluxes = np.arange(0, 3.0, 0.02)
 
 ####### PERTURBATION ########
 # Perturbation
@@ -51,27 +51,32 @@ if add_noise == True:
 ########################
 
 pop_size = 200
-genotype_size = diversity * diversity
+discrete_genotype_size = diversity * diversity
+continuous_genotype_size = diversity
 
 evol_params = {
     "num_processes": 100,
     "pop_size": pop_size,  # population size
-    "genotype_size": genotype_size,  # dimensionality of solution
+    "continuous_genotype_size": continuous_genotype_size,  # dimensionality of solution
+    "discrete_genotype_size": discrete_genotype_size,
     "fitness_function": partial(daisyworld_fitness, diversity=diversity, display=display, 
                                 maxconv=maxconv, fluxes=fluxes, pert_value=pert_value,
                                 perturbation=perturbation),  # custom function defined to evaluate fitness of a solution
     "elitist_fraction": 0.1,  # fraction of population retained as is between generation
-    "mutation_variance": 0.1,  # mutation noise added to offspring.
+    "discrete_mutation_probability": 0.1, # probability of mutation of the discrete genome
+    "continuous_mutation_variance": 0.1,  # mutation noise added to offspring.
 }
-initial_pop = np.random.randint(2, size=(pop_size, diversity*diversity))
+discrete_initial_pop = np.random.randint(2, size=(pop_size, discrete_genotype_size))
+continuous_initial_pop = np.random.uniform(0, 1, size=(pop_size, continuous_genotype_size))
 
-if use_best_individual:
-    initial_pop[0] = best_individual["params"]
+#if use_best_individual:
+#    initial_pop[0] = best_individual["params"]
 
-evolution = EvolSearch(evol_params, initial_pop)
+evolution = EvolSearch(evol_params, discrete_initial_pop, continuous_initial_pop)
 
 save_best_individual = {
-    "params": None,
+    "discrete_params": None,
+    "continuous_params": None,
     "diversity": diversity,
     "maxconv": maxconv,
     "best_fitness": [],
@@ -81,7 +86,7 @@ save_best_individual = {
 for i in range(20):
     evolution.step_generation()
     
-    save_best_individual["params"] = evolution.get_best_individual()
+    save_best_individual["discrete_params"], save_best_individual["continuous_params"] = evolution.get_best_individual()
     
     save_best_individual["best_fitness"].append(evolution.get_best_individual_fitness())
     save_best_individual["mean_fitness"].append(evolution.get_mean_fitness())
